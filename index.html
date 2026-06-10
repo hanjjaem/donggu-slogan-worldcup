@@ -224,7 +224,7 @@
   .gongbo-back{position:fixed; inset:0; background:rgba(20,18,14,.45); opacity:0; visibility:hidden;
     transition:.25s; z-index:50;}
   .gongbo-back.open{opacity:1; visibility:visible;}
-  .gongbo{position:fixed; top:0; right:0; height:100%; width:min(640px,94vw); background:var(--sheet);
+  .gongbo{position:fixed; top:0; right:0; height:100%; width:min(1100px,96vw); background:var(--sheet);
     border-left:1px solid var(--rule); transform:translateX(100%); transition:transform .28s ease; z-index:60;
     display:flex; flex-direction:column; box-shadow:-14px 0 34px rgba(20,18,14,.22);}
   .gongbo.open{transform:translateX(0);}
@@ -239,7 +239,7 @@
   .gongbo-head .x:hover{color:var(--accent);}
   .gongbo-body{flex:1; overflow:auto; padding:18px 20px; display:flex; flex-direction:column; gap:18px;}
   .gongbo-fig{position:relative;}
-  .gongbo-fig img{width:100%; display:block; border:1px solid var(--rule);}
+  .gongbo-fig img{width:100%; display:block; border:1px solid var(--rule); cursor:zoom-in;}
   .gongbo-fig iframe{width:100%; height:82vh; border:1px solid var(--rule); display:block; background:#fff;}
   .gongbo-doc{font-family:var(--serif); font-weight:700; font-size:14px; margin:2px 0 8px; color:var(--ink);
     display:flex; align-items:center; gap:8px;}
@@ -252,6 +252,12 @@
     margin-top:40px; line-height:2;}
   .gongbo-note{font-family:var(--sans); font-size:12.5px; line-height:1.7; color:var(--accent);
     background:var(--accent-soft); border:1px solid var(--rule); padding:12px 14px;}
+  .gongbo-hint{font-family:var(--sans); font-size:12px; color:var(--sub); text-align:center; margin-bottom:4px;}
+  /* 라이트박스(전체화면 확대) */
+  .lightbox{position:fixed; inset:0; background:rgba(15,13,10,.92); z-index:80; display:none;
+    overflow:auto; cursor:zoom-out; padding:24px;}
+  .lightbox.open{display:flex; align-items:flex-start; justify-content:center;}
+  .lightbox img{max-width:min(1500px,98vw); width:100%; height:auto; box-shadow:0 14px 50px rgba(0,0,0,.55);}
 </style>
 </head>
 <body>
@@ -358,6 +364,7 @@
     </div>
     <div class="gongbo-body" id="gongboBody"></div>
   </aside>
+  <div id="lightbox" class="lightbox" onclick="closeZoom()"><img id="lightboxImg" alt="확대 보기"></div>
 </div>
 
 <script>
@@ -630,9 +637,11 @@ function docFig(name, src, type, delBtn){
     (type==='pdf' ? ' <a href="'+src+'" target="_blank" rel="noopener">새 창</a>' : '')+'</div>';
   return '<div class="gongbo-fig">'+head+media+(delBtn||'')+'</div>';
 }
+function zoomImg(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
+function closeZoom(){ document.getElementById('lightbox').classList.remove('open'); }
 function renderGongbo(){
   const b=document.getElementById('gongboBody');
-  let html = BUILTIN_GROUPS.map(g=>
+  let html = '<div class="gongbo-hint">🔍 이미지를 클릭하면 전체화면으로 크게 볼 수 있어요</div>' + BUILTIN_GROUPS.map(g=>
     '<div class="gongbo-doc">'+escapeHtml(g.title)+'</div>'+
     g.imgs.map(src=>'<div class="gongbo-fig"><img src="'+src+'" alt="'+escapeHtml(g.title)+'" loading="lazy"></div>').join('')
   ).join('');
@@ -642,8 +651,16 @@ function renderGongbo(){
   b.innerHTML = html || '<div class="gongbo-empty">공보물이 없습니다.<br>위 ‘파일 불러오기’로 PDF·이미지를 추가하세요.</div>';
 }
 
+document.getElementById('gongboBody').addEventListener('click', e=>{
+  if(e.target.tagName==='IMG') zoomImg(e.target.src);
+});
+
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){ closeGongbo(); return; }
+  if(e.key==='Escape'){
+    if(document.getElementById('lightbox').classList.contains('open')) closeZoom();
+    else closeGongbo();
+    return;
+  }
   if(document.getElementById('gongbo').classList.contains('open')) return;   // 공보물 열림 중엔 게임키 무시
   if(document.getElementById('tabGame').hidden) return;
   if(document.getElementById('game').style.display==='none') return;
