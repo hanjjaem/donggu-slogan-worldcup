@@ -747,8 +747,8 @@ function showTab(name){
 }
 
 /* ── 제안·댓글 (Supabase) ── */
-const SB_URL = "";   // 예: https://xxxxx.supabase.co   ← 설정하면 좌측 '제안·댓글' 버튼 활성화
-const SB_KEY = "";   // anon public key
+const SB_URL = "https://orprpgdatlqnoampscuj.supabase.co";   // Supabase 프로젝트 URL
+const SB_KEY = "sb_publishable_P1rZPwOUdS3E25mqnsXfmw_FcTRGx8A";   // publishable(공개) 키
 function sbHeaders(){ return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}; }
 function openComments(){ document.getElementById('comments').classList.add('open'); document.getElementById('commentsBack').classList.add('open'); loadComments(); }
 function closeComments(){ document.getElementById('comments').classList.remove('open'); document.getElementById('commentsBack').classList.remove('open'); }
