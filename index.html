@@ -423,10 +423,7 @@
   <aside id="gongbo" class="gongbo" aria-hidden="true">
     <div class="gongbo-head">
       <strong>공보물</strong>
-      <div class="act">
-        <label class="up">파일 불러오기<input type="file" accept="image/*,application/pdf,.pdf" multiple onchange="addGongbo(this.files)" hidden></label>
-        <button class="x" onclick="closeGongbo()" title="닫기">✕</button>
-      </div>
+      <button class="x" onclick="closeGongbo()" title="닫기">✕</button>
     </div>
     <div class="gongbo-body" id="gongboBody"></div>
   </aside>
@@ -825,15 +822,11 @@ function docFig(name, src, type, delBtn){
 function zoomImg(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
 function closeZoom(){ document.getElementById('lightbox').classList.remove('open'); }
 function renderGongbo(){
-  const b=document.getElementById('gongboBody');
-  let html = '<div class="gongbo-hint">🔍 이미지를 클릭하면 전체화면으로 크게 볼 수 있어요</div>' + BUILTIN_GROUPS.map(g=>
+  document.getElementById('gongboBody').innerHTML =
+    '<div class="gongbo-hint">🔍 이미지를 클릭하면 전체화면으로 크게 볼 수 있어요</div>' + BUILTIN_GROUPS.map(g=>
     '<div class="gongbo-doc">'+escapeHtml(g.title)+'</div>'+
     g.imgs.map(src=>'<div class="gongbo-fig"><img src="'+src+'" alt="'+escapeHtml(g.title)+'" loading="lazy"></div>').join('')
   ).join('');
-  html += gongboImgs.map((im,i)=>
-    docFig(im.name||'추가 자료', (im.type==='pdf'?dataURLtoURL(im.data):im.data), (im.type||'image'),
-      '<button onclick="delGongbo('+i+')">삭제</button>')).join('');
-  b.innerHTML = html || '<div class="gongbo-empty">공보물이 없습니다.<br>위 ‘파일 불러오기’로 PDF·이미지를 추가하세요.</div>';
 }
 
 document.getElementById('gongboBody').addEventListener('click', e=>{
