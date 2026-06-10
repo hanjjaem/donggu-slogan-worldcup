@@ -53,19 +53,21 @@
   .tabs button.active:after{content:""; position:absolute; left:22px; right:22px; bottom:2px; height:2px; background:var(--accent);}
   .tab[hidden]{display:none;}
 
-  /* 구·군 비전 탭 */
-  .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13.5px; margin-bottom:8px;}
-  .vrow{border-top:1px solid var(--rule); padding:18px 2px;}
-  .vrow.me{background:var(--accent-soft); border-top:2px solid var(--accent); padding:18px 14px; border-radius:4px;}
-  .vr-name{font-family:var(--serif); font-weight:800; font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
-  .vr-tag{font-family:var(--sans); font-size:11px; font-weight:700; color:var(--sheet); background:var(--accent); padding:2px 8px; border-radius:3px;}
-  .vr-cols{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-  .vr-term{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--sub); font-weight:700;}
-  .vr-vision{font-family:var(--serif); font-weight:800; font-size:15.5px; margin:6px 0 9px; line-height:1.45;}
-  .vr-col ul{list-style:none; padding:0; margin:0;}
-  .vr-col li{font-size:13px; color:var(--ink); line-height:1.7; padding-left:13px; position:relative;}
-  .vr-col li:before{content:"·"; position:absolute; left:3px; color:var(--accent); font-weight:800;}
-  @media(max-width:640px){ .vr-cols{grid-template-columns:1fr; gap:14px;} }
+  /* 구·군 비전 탭 — 엑셀형 표 */
+  .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13.5px; margin-bottom:10px;}
+  .vscroll{overflow:auto; max-height:78vh; border:1px solid var(--ink);}
+  .vtable{border-collapse:collapse; width:100%; font-size:13px; background:#fff;}
+  .vtable th,.vtable td{border:1px solid var(--rule); padding:8px 10px; vertical-align:top; text-align:left;}
+  .vtable thead th{position:sticky; top:0; z-index:2; background:#ece8dc; font-family:var(--sans);
+    font-weight:700; font-size:12px; text-align:center; letter-spacing:.02em;}
+  .vtable thead tr:nth-child(2) th{top:33px; z-index:1;}
+  .vtable td.c{text-align:center; font-weight:700; color:var(--sub); white-space:nowrap;}
+  .vtable td.region{font-family:var(--serif); font-weight:800; white-space:nowrap;}
+  .vtable td.vision{font-family:var(--serif); font-weight:700; min-width:150px;}
+  .vtable .goals{margin:0; padding-left:16px;}
+  .vtable .goals li{line-height:1.55; margin-bottom:2px;}
+  .vtable tr.me td{background:var(--accent-soft);}
+  .vtable tr.me td.region{color:var(--accent);}
 
   /* ── 시트 ── */
   .sheet{background:var(--sheet); border:1px solid var(--rule); margin-top:18px;
@@ -764,11 +766,17 @@ const VISIONS=[
  {r:"기장군", v7:"전통과 첨단이 조화되는, 빛과 물 그리고 꿈의 도시 기장", g7:["찾아가는 현장행정","풍요로운 경제행정","인재양성 교육행정","움직이는 감동행정","함께하는 복지행정"], v8:"행복을 품은 도시, 미래를 여는 기장", g8:["다함께 행복도시","융복합 미래도시","지속가능한 소통도시","사통팔달 교통도시"]}
 ];
 function renderVisions(){
-  const col=(term,v,g)=>'<div class="vr-col"><span class="vr-term">'+term+'</span><div class="vr-vision">'+hl(v)+'</div><ul>'+g.map(x=>'<li>'+hl(x)+'</li>').join('')+'</ul></div>';
-  document.getElementById('visionList').innerHTML = VISIONS.map((d,i)=>
-    '<div class="vrow'+(d.r==='동구'?' me':'')+'"><div class="vr-name">'+i+'. '+escapeHtml(d.r)+(d.r==='동구'?' <span class="vr-tag">우리 구</span>':'')+'</div>'+
-    '<div class="vr-cols">'+col('민선 7기',d.v7,d.g7)+col('민선 8기',d.v8,d.g8)+'</div></div>'
-  ).join('');
+  const goals=g=>'<ul class="goals">'+g.map(x=>'<li>'+hl(x)+'</li>').join('')+'</ul>';
+  const rows=VISIONS.map((d,i)=>'<tr'+(d.r==='동구'?' class="me"':'')+'>'+
+    '<td class="c">'+i+'</td>'+
+    '<td class="region">'+escapeHtml(d.r)+(d.r==='동구'?' ★':'')+'</td>'+
+    '<td class="vision">'+hl(d.v7)+'</td><td>'+goals(d.g7)+'</td>'+
+    '<td class="vision">'+hl(d.v8)+'</td><td>'+goals(d.g8)+'</td></tr>').join('');
+  document.getElementById('visionList').innerHTML =
+    '<div class="vscroll"><table class="vtable"><thead>'+
+    '<tr><th rowspan="2">연번</th><th rowspan="2">구·군</th><th colspan="2">민선 7기</th><th colspan="2">민선 8기</th></tr>'+
+    '<tr><th>비전</th><th>세부목표</th><th>비전</th><th>세부목표</th></tr>'+
+    '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const KW = ["동구","행복","북항","변화","중심","뚝심","활력","미래","골목"];   // 버건디 강조 키워드
