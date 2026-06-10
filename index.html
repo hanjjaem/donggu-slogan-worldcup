@@ -53,6 +53,20 @@
   .tabs button.active:after{content:""; position:absolute; left:22px; right:22px; bottom:2px; height:2px; background:var(--accent);}
   .tab[hidden]{display:none;}
 
+  /* 구·군 비전 탭 */
+  .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13.5px; margin-bottom:8px;}
+  .vrow{border-top:1px solid var(--rule); padding:18px 2px;}
+  .vrow.me{background:var(--accent-soft); border-top:2px solid var(--accent); padding:18px 14px; border-radius:4px;}
+  .vr-name{font-family:var(--serif); font-weight:800; font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .vr-tag{font-family:var(--sans); font-size:11px; font-weight:700; color:var(--sheet); background:var(--accent); padding:2px 8px; border-radius:3px;}
+  .vr-cols{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .vr-term{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--sub); font-weight:700;}
+  .vr-vision{font-family:var(--serif); font-weight:800; font-size:15.5px; margin:6px 0 9px; line-height:1.45;}
+  .vr-col ul{list-style:none; padding:0; margin:0;}
+  .vr-col li{font-size:13px; color:var(--ink); line-height:1.7; padding-left:13px; position:relative;}
+  .vr-col li:before{content:"·"; position:absolute; left:3px; color:var(--accent); font-weight:800;}
+  @media(max-width:640px){ .vr-cols{grid-template-columns:1fr; gap:14px;} }
+
   /* ── 시트 ── */
   .sheet{background:var(--sheet); border:1px solid var(--rule); margin-top:18px;
     padding:clamp(20px,3.4vw,44px); box-shadow:0 1px 0 var(--rule),  6px 8px 0 rgba(28,26,21,.05);}
@@ -322,6 +336,7 @@
   <nav class="tabs">
     <button id="tab-game" class="active" onclick="showTab('game')">토너먼트</button>
     <button id="tab-rank" onclick="showTab('rank')">랭킹</button>
+    <button id="tab-vision" onclick="showTab('vision')">구·군 비전</button>
     <button id="tab-manage" onclick="showTab('manage')">🔒 편집·관리</button>
   </nav>
 
@@ -403,6 +418,13 @@
         </table>
       </div>
     </div><!-- /tabRank -->
+
+    <div id="tabVision" class="tab" hidden>
+      <div class="vision-wrap">
+        <p class="vision-intro">부산 16개 구·군 + 부산시의 <b>민선 7·8기 비전·세부목표</b> (참고 자료). 우리 <b>동구</b>는 강조 표시.</p>
+        <div id="visionList"></div>
+      </div>
+    </div><!-- /tabVision -->
   </main>
 
   <!-- 제안·댓글 -->
@@ -720,6 +742,34 @@ function renderRank(){
     '<td class="c">'+(e.champ||0)+'</td><td class="c">'+(e.pick||0)+'</td></tr>').join('');
 }
 function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; store.stats={}; save(); renderRank(); } }
+
+/* ── 타 구·군 민선 7·8기 비전·세부목표 (참고) ── */
+const VISIONS=[
+ {r:"부산시", v7:"시민이 행복한 동북아 해양수도 부산", g7:["일자리가 풍성한 경제 혁신 도시","청년의 미래를 여는 스마트 도시","가족이 행복한 건강 안전 도시","문화가 흐르는 글로벌 품격 도시","시민이 주인인 시정 참여 도시"], v8:"부산 먼저 미래로 그린스마트 도시 부산 — (슬로건) 다시 태어나도 살고 싶은 부산", g8:["내게 힘이 되는 시민행복도시","세계와 함께하는 글로벌허브도시","지산학이 주도하는 창업금융도시","미래를 선도하는 디지털혁신도시","친환경 기술로 앞서가는 저탄소그린도시","누구나 찾고 싶은 문화관광매력도시"]},
+ {r:"중구", v7:"구민이 주인되는 행복도시 중구", g7:["행복나눔 돌봄복지","살아나는 지역경제","품격있는 문화관광","신뢰받는 구민행정"], v8:"구민이 주인되는 행복도시 중구", g8:["행복나눔 돌봄복지","살아나는 지역경제","품격있는 문화관광","신뢰받는 구민행정"]},
+ {r:"서구", v7:"딱! 살기 좋은 도시 서구", g7:["활력 있는 해양도시","품격 있는 문화도시","찾고 싶은 관광도시","더불어 사는 복지도시","구민 중심 안전도시"], v8:"딱! 살기 좋은 도시 서구", g8:["활력 있는 해양도시","품격 있는 문화도시","찾고 싶은 관광도시","더불어 사는 복지도시","구민 중심 안전도시"]},
+ {r:"동구", v7:"변화와 도전, 함께 동구로!", g7:["풍요로운 일자리, 내 일이 있는 동구","아이 키우기 좋은, 젊은 동구","촘촘한 복지, 행복 동구","편리한 환경, 사람이 먼저인 동구","문화의 새 바람, 매력 동구"], v8:"북항시대 동구! 꿈을 현실로", g8:["희망을 디자인하는 명품 동구","마음으로 다가가는 복지 동구","즐겁고 신명나는 활력 동구","미래를 열어가는 스마트 동구","주민과 함께하는 공감 동구"]},
+ {r:"영도구", v7:"구민 중심, 따뜻한 영도", g7:["구민과 소통하는 열린행정 혁신도시","요람에서 100세까지 든든한 복지도시","삶의 질을 높이는 해양문화 관광도시","공간의 재탄생 도시재생 선도도시","일자리를 창출하는 첨단해양 산업도시"], v8:"구민 안전, 깨끗한 영도", g8:["감동과 희망의 복지교육도시","구민 최우선의 생활안전도시","미래를 열어가는 해양산업도시","다시 찾고 싶은 문화관광도시","소통과 참여의 구민행복도시"]},
+ {r:"부산진구", v7:"시민주권 사람중심 부산진구", g7:["사람 자본의 경쟁력을 높이는 교육도시","일자리가 풍성한 나눔 공동체 복지도시","찾고 싶고 머물고 싶은 쇼핑 관광도시","안전하고 건강한 삶을 누리는 문화도시","IoT·ICT 구현으로 시민행복 미래도시","공감·소통이 꽃피는 시민주인 참여도시"], v8:"부산의 중심 도약하는 부산진구", g8:["사랑과 희망의 복지건강도시","다시 찾고 싶은 스마트관광도시","일자리가 풍부한 경제중심도시","쾌적하고 편리한 친환경안전도시","구민과 소통하는 혁신창조도시"]},
+ {r:"동래구", v7:"소통·화합·혁신! 다함께 행복한 동래!", g7:["든든하고 활기찬 지역경제","꿈과 희망을 주는 교육문화","믿음주고 봉사하는 착한복지","살기에 편리한 안전동래","주민과 함께하는 열린행정"], v8:"변화와 혁신! 새로운 동래!", g8:["전통이 살아 숨 쉬는 역사문화","미래 인재를 위한 명품 교육","경제가 살아나는 희망 동래","더 안전하고 건강한 행복도시","구민이 중심인 섬김 봉사행정"]},
+ {r:"남구", v7:"새로운 백년의 비전, 세계평화특구 남구 — (슬로건) 평화가 미래다. 사람이 희망이다", g7:["문화와 관광의 평화도시","사람 중심의 행복도시","안전하고 쾌적한 청정도시","도시재생을 통한 균형발전","소통과 섬김의 열린구정"], v8:"변화하는 남구, 세계가 찾는 도시", g8:["소통과 투명행정","정성과 행복행정","돌봄과 회복행정","자력과 내생행정","실용과 혁신행정"]},
+ {r:"북구", v7:"내 삶에 힘이 되는 새로운 북구", g7:["안전하게 지키는 생활환경","활기차게 일하는 민생경제","자유롭게 꿈꾸는 교육문화","당당하게 누리는 건강복지","소중하게 나누는 공감행정"], v8:"내일이 더 기대되는 변화의 북구", g8:["살맛 나는 생활환경","활력 있는 지역경제","꿈을 여는 교육문화","온정 품은 건강복지","감동 담은 열린행정"]},
+ {r:"해운대구", v7:"사람중심 미래도시 해운대", g7:["소통하는 균형발전","막힘없는 교통체계","원칙있는 안전도시","세계적인 관광도시","일자리 풍부한 경제도시","더 행복한 복지도시","신뢰받는 공감행정"], v8:"살기 좋은 도시 오고 싶은 도시 해운대", g8:["활기찬 지역경제","따뜻한 봉사행정","고품격 문화관광","촘촘한 복지증진","든든한 안전확보","시원한 교통흐름"]},
+ {r:"사하구", v7:"구민과 함께하는 행복도시 사하", g7:["24시간 숨쉬기 편한 도시 사하","우리아이 키우기 참 좋은 사하","사통팔달! 교통체증 걱정 없는 사하","누구도 소외되지 않는 따뜻한 사하","자연이 살아나고 경제도 살아나는 사하","쾌적한 주거환경과 여가공간이 있는 사하"], v8:"더 나은 미래, 새로운 사하", g8:["삶의 가치를 더하는 명품 주거도시","모두가 누리는 복지도시","함께 잘 사는 스마트 경제도시","가덕도신공항을 잇는 교통 중심도시","자연과 문화가 어우러진 힐링 관광도시","쾌적하고 살기좋은 녹색 안전도시"]},
+ {r:"금정구", v7:"구민이 주인인 정의로운 금정", g7:["창조적인 혁신","나누는 일자리","따뜻한 공동체","지역문화 창달"], v8:"새로운 도약 다시 활기찬 금정", g8:["사람이 모이는 명품도시","힘차게 성장하는 활력도시","모두가 행복한 건강도시","재난을 예방하는 안전도시","구민과 함께하는 소통도시"]},
+ {r:"연제구", v7:"품격있는 도시 상생하는 연제", g7:["미래를 준비하는 교육","내 삶이 나아지는 경제","활기차고 건강한 도시","쾌적하고 안전한 환경","함께하는 소통 행정"], v8:"새로운 변화 꿈을 여는 연제", g8:["다시 살아나는 지역경제","온정과 희망을 주는 나눔복지","누구나 누리는 행복교육","삶이 건강한 문화체육","자연과 어우러진 아름다운 환경","소통과 공감으로 다가가는 행정"]},
+ {r:"강서구", v7:"부산의 미래 명품도시 강서", g7:["감동주는 자치행정","활력있는 지역경제","균형있는 도시개발","풍요로운 복지구현"], v8:"자유와 혁신 위대한 강서", g8:["친환경 스마트시티","행복한 문화·복지","역동적인 지역경제","소통하는 열린 행정"]},
+ {r:"수영구", v7:"아름다운 도시 행복한 수영", g7:["살기좋은 행복수영","문화관광 명품수영","보다나은 미래수영","함께하는 나눔수영","혁신하는 신뢰수영","구민소통 공감수영"], v8:"아름다운 도시 행복한 수영", g8:["가족이 행복한 행복수영","안전한 삶이 보장되는 안전수영","시대를 앞서가는 미래수영","역사와 첨단의 공존 관광수영","일과 삶이 조화로운 경제수영","모두가 부러워할 명품수영"]},
+ {r:"사상구", v7:"새롭고 강한 미래 100년 사상", g7:["청렴한 구정과 소통","상생하는 지역경제","품격있는 교육문화","함께하는 안전도시"], v8:"사상을 새롭게 구민을 힘나게", g8:["활기찬 첨단사업 도시","아름다운 녹색환경 도시","따뜻한 복지건강 도시","다채로운 문화교육 도시","주민을 향한 열린 구정"]},
+ {r:"기장군", v7:"전통과 첨단이 조화되는, 빛과 물 그리고 꿈의 도시 기장", g7:["찾아가는 현장행정","풍요로운 경제행정","인재양성 교육행정","움직이는 감동행정","함께하는 복지행정"], v8:"행복을 품은 도시, 미래를 여는 기장", g8:["다함께 행복도시","융복합 미래도시","지속가능한 소통도시","사통팔달 교통도시"]}
+];
+function renderVisions(){
+  const col=(term,v,g)=>'<div class="vr-col"><span class="vr-term">'+term+'</span><div class="vr-vision">'+hl(v)+'</div><ul>'+g.map(x=>'<li>'+hl(x)+'</li>').join('')+'</ul></div>';
+  document.getElementById('visionList').innerHTML = VISIONS.map((d,i)=>
+    '<div class="vrow'+(d.r==='동구'?' me':'')+'"><div class="vr-name">'+i+'. '+escapeHtml(d.r)+(d.r==='동구'?' <span class="vr-tag">우리 구</span>':'')+'</div>'+
+    '<div class="vr-cols">'+col('민선 7기',d.v7,d.g7)+col('민선 8기',d.v8,d.g8)+'</div></div>'
+  ).join('');
+}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const KW = ["동구","행복","북항","변화","중심","뚝심","활력","미래","골목"];   // 버건디 강조 키워드
 function hl(t){ let s=escapeHtml(t); KW.forEach(k=>{ s=s.split(k).join('<span class="kw">'+k+'</span>'); }); return s; }
@@ -734,12 +784,13 @@ function showTab(name){
     adminUnlocked = true;
     const t=document.getElementById('tab-manage'); if(t) t.textContent="편집·관리";   // 잠금 해제 표시
   }
-  ['game','rank','manage'].forEach(n=>{
+  ['game','rank','vision','manage'].forEach(n=>{
     document.getElementById('tab'+n[0].toUpperCase()+n.slice(1)).hidden = (n!==name);
     document.getElementById('tab-'+n).classList.toggle('active', n===name);
   });
   if(name==='rank') renderRank();
   if(name==='manage') renderManage();
+  if(name==='vision') renderVisions();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
