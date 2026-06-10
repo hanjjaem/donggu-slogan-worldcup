@@ -424,17 +424,27 @@ let adminUnlocked = false;   // 이 세션에서 관리자 인증 여부
 let store = load();          // {wins,runs,eliminated:{id:{reason,ts,t}},custom:[{id,t,g}],edits:{id:{t,g}},cid}
 let round=[], next=[], idx=0, roundNum=1, busy=false;
 let gameReach={}, gamePick={};   // 이번 판: 슬로건별 최고도달 라운드크기 / 맞대결 승수
-let pendingBye=null, lastByeText=null;   // 이번 라운드 부전승 / 직전 라운드 부전승(연속 방지)
+let pendingByes=[], lastByeTexts=new Set(), byeCount=0;   // 이번 라운드 부전승 목록 / 직전 부전승(연속 방지) / 부전승 수
 
-// 홀수 라운드면 부전승 1명을 공정하게 선정해 배열 맨 뒤로 보낸다(맨 뒤가 자동 부전승됨)
+function pow2Floor(n){ let p=1; while(p*2<=n) p*=2; return p; }
+// 이 라운드 부전승 수: N이 2의 거듭제곱이면 0(정상 절반), 아니면 다음 라운드를 가장 가까운 아래 2거듭제곱(P)으로 맞추기 위해 2P-N
+function roundByeCount(n){ if(n<=1) return 0; if((n&(n-1))===0) return 0; const P=pow2Floor(n); return 2*P-n; }
+
+// 부전승 대상을 공정하게(직전 부전승자 제외 우선) 선정해 배열 맨 뒤로 보낸다 → 다음 라운드 인원이 2의 거듭제곱이 됨
 function prepareRound(arr){
-  pendingBye=null;
-  if(arr.length % 2 === 1){
-    let cands = arr.filter(s=>s.t!==lastByeText);
-    if(!cands.length) cands = arr;                       // 모두 직전 부전승이면(이론상) 전체에서
-    const pick = cands[Math.random()*cands.length|0];
-    arr.splice(arr.indexOf(pick),1); arr.push(pick);     // 맨 뒤로 이동 → 짝 안 맞는 마지막이 됨
-    pendingBye = pick; lastByeText = pick.t;
+  pendingByes=[]; byeCount=roundByeCount(arr.length);
+  if(byeCount>0){
+    let pool = arr.filter(s=>!lastByeTexts.has(s.t));
+    if(pool.length < byeCount) pool = arr.slice();        // 직전 제외하면 모자라면 전체에서
+    pool = pool.slice();
+    const chosen=[];
+    while(chosen.length<byeCount && pool.length){ const i=Math.random()*pool.length|0; chosen.push(pool[i]); pool.splice(i,1); }
+    while(chosen.length<byeCount){ const rest=arr.filter(s=>!chosen.includes(s)); chosen.push(rest[Math.random()*rest.length|0]); }
+    chosen.forEach(c=>arr.splice(arr.indexOf(c),1));      // 맨 뒤로 이동
+    chosen.forEach(c=>arr.push(c));
+    pendingByes=chosen; lastByeTexts=new Set(chosen.map(c=>c.t));
+  }else{
+    lastByeTexts=new Set();
   }
   return arr;
 }
@@ -468,7 +478,7 @@ function startGame(){
   }
   round = shuffle(pool);
   next=[]; idx=0; roundNum=1; busy=false;
-  lastByeText=null; prepareRound(round);
+  lastByeTexts=new Set(); prepareRound(round);
   gameReach={}; gamePick={}; round.forEach(s=>{ gameReach[s.t]=round.length; });
   document.getElementById('result').style.display='none';
   document.getElementById('game').style.display='block';
@@ -482,14 +492,14 @@ function render(){
   setCard('R', round[idx+1]);
 }
 function renderProgress(){
-  const totalUnits = Math.floor(round.length/2);   // 실제 경기 수(부전승 제외)
+  const totalUnits = (round.length - byeCount)/2;   // 실제 경기 수(부전승 제외)
   const cur = Math.floor(idx/2);
   document.getElementById('roundTag').textContent = roundLabel(round.length) + " · " + Math.min(cur+1,totalUnits) + " / " + totalUnits + " 경기";
   let d='';
   for(let i=0;i<totalUnits;i++) d += '<span class="dot'+(i<cur?' done':(i===cur?' cur':''))+'"></span>';
   document.getElementById('dots').innerHTML = d;
   const bn=document.getElementById('byeNote');
-  if(bn) bn.textContent = pendingBye ? ('🎫 부전승 ‘'+pendingBye.t+'’ 자동 진출') : '';
+  if(bn) bn.textContent = pendingByes.length ? ('🎫 부전승 ' + pendingByes.map(b=>'‘'+b.t+'’').join(', ') + ' 자동 진출') : '';
 }
 function roundLabel(n){ return n<=2 ? "결승" : (n+"강"); }
 function setCard(side, item){
@@ -531,8 +541,9 @@ function decide(kind){
 function flash(id){ document.getElementById(id).classList.add('flash'); }
 
 function stepForward(duel){
-  if(round.length - idx === 1){ next.push(round[idx]); idx += 1; }  // 부전승
-  if(idx >= round.length){
+  const matchable = round.length - byeCount;       // 실제 대결에 참여하는 인원(짝수)
+  if(idx >= matchable){
+    for(let i=matchable;i<round.length;i++) next.push(round[i]);   // 부전승 전원 자동 진출
     const survivors = next.slice();
     if(survivors.length <= 1){
       duel.classList.remove('leaving');
