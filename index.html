@@ -685,7 +685,7 @@ function renderRank(){
 }
 function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; store.stats={}; save(); renderRank(); } }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-const KW = ["동구","행복","북항","변화","중심","뚝심","활력"];   // 버건디 강조 키워드
+const KW = ["동구","행복","북항","변화","중심","뚝심","활력","미래"];   // 버건디 강조 키워드
 function hl(t){ let s=escapeHtml(t); KW.forEach(k=>{ s=s.split(k).join('<span class="kw">'+k+'</span>'); }); return s; }
 // 카드/결과용: 강조 + 구분기호(, !) 뒤에서 줄바꿈
 function cardHtml(t){ return hl(t).replace(/([,!]) /g, '$1<br>'); }
