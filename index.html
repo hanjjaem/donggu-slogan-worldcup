@@ -55,6 +55,7 @@
   .tab{flex:1; min-height:0; overflow:auto;}
   .tab[hidden]{display:none;}
   #tabGame{display:flex; flex-direction:column;}
+  #tabGame[hidden]{display:none;}
   #tabGame #game{flex:1; display:flex; flex-direction:column; min-height:0;}
   #tabGame .duel{flex:1; min-height:0;}
   #tabGame .pick{min-height:0;}
@@ -203,6 +204,11 @@
     font-size:13px; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
 
   /* ── 랭킹 ── */
+  .rank-top{text-align:center; padding:10px 0 20px; margin-bottom:18px; border-bottom:1px dashed var(--rule);}
+  .rank-top:empty{display:none;}
+  .rank-top .rt-label{font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:12px;}
+  .rank-top .rt-slogan{font-family:var(--serif); font-weight:900; font-size:clamp(24px,4vw,42px); line-height:1.4;
+    color:var(--ink); background:linear-gradient(transparent 62%, rgba(245,179,1,.4) 0); display:inline; padding:0 8px;}
   .rank h3{font-family:var(--serif); font-weight:800; font-size:20px; margin-bottom:4px;}
   .rank .runs{font-family:var(--serif); font-style:italic; font-size:13px; color:var(--sub); margin-bottom:16px;}
   table{width:100%; border-collapse:collapse;}
@@ -428,6 +434,7 @@
 
     <div id="tabRank" class="tab" hidden>
       <div class="rank">
+        <div id="rankTop" class="rank-top"></div>
         <h3>누적 우승 랭킹</h3>
         <div class="runs" id="runsInfo">아직 진행 기록이 없습니다.</div>
         <table>
@@ -758,6 +765,10 @@ function renderRank(){
   const stats = store.stats||{};
   const entries = Object.keys(stats).map(t=>Object.assign({t:t}, stats[t]));
   entries.sort((a,b)=> (b.champ-a.champ) || (a.best-b.best) || (b.pick-a.pick) || (b.appear-a.appear));
+  const top=document.getElementById('rankTop');
+  if(top) top.innerHTML = entries.length
+    ? '<div class="rt-label">🏆 현재 1위</div><div class="rt-slogan">'+cardHtml(entries[0].t)+'</div>'
+    : '';
   document.getElementById('runsInfo').textContent = entries.length
     ? ("완료 "+(store.runs||0)+"판 집계 · 등록 슬로건 "+entries.length+"편 · ‘최고’=도달한 가장 높은 라운드")
     : "아직 집계가 없습니다. 한 판을 끝내면 슬로건별 성적이 쌓입니다.";
