@@ -90,6 +90,7 @@
   .tags{display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
   .tag{font-family:var(--sans); font-size:11px; letter-spacing:.02em; color:var(--accent);
     border:1px solid var(--rule); padding:2px 8px; background:transparent;}
+  .kw{color:var(--accent);}   /* 키워드 버건디 강조 */
   .card.flash{animation:flash .4s ease;}
   @keyframes flash{0%{background:var(--accent-soft);}50%{background:#e7cdbf;}100%{background:transparent;}}
 
@@ -499,11 +500,11 @@ function renderProgress(){
   for(let i=0;i<totalUnits;i++) d += '<span class="dot'+(i<cur?' done':(i===cur?' cur':''))+'"></span>';
   document.getElementById('dots').innerHTML = d;
   const bn=document.getElementById('byeNote');
-  if(bn) bn.textContent = pendingByes.length ? ('🎫 부전승 ' + pendingByes.map(b=>'‘'+b.t+'’').join(', ') + ' 자동 진출') : '';
+  if(bn) bn.innerHTML = pendingByes.length ? ('🎫 부전승 ' + pendingByes.map(b=>'‘'+hl(b.t)+'’').join(', ') + ' 자동 진출') : '';
 }
 function roundLabel(n){ return n<=2 ? "결승" : (n+"강"); }
 function setCard(side, item){
-  document.getElementById('txt'+side).textContent = item.t;
+  document.getElementById('txt'+side).innerHTML = hl(item.t);
   const tg=document.getElementById('tags'+side); if(tg) tg.innerHTML = chips(item.g);
   document.getElementById('card'+side).classList.remove('flash');
 }
@@ -581,7 +582,7 @@ function commitGame(championText){
 function finishChampion(champ){
   commitGame(champ.t);
   showResult('<div class="crown">🏆</div><div class="label">최종 선정</div>'+
-    '<div class="champ">'+escapeHtml(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
+    '<div class="champ">'+hl(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
   renderRank();
 }
 function finishResult(survivors){
@@ -593,7 +594,7 @@ function finishResult(survivors){
   }else{
     html = '<div class="crown">＊</div><div class="label">최종 생존 '+survivors.length+'편</div>'+
            '<div class="survivors">'+survivors.map(s=>
-             '<div class="row"><b>'+escapeHtml(s.t)+'</b><span class="mini">'+chips(s.g)+'</span></div>').join('')+'</div>';
+             '<div class="row"><b>'+hl(s.t)+'</b><span class="mini">'+chips(s.g)+'</span></div>').join('')+'</div>';
   }
   showResult(html);
   renderRank();
@@ -652,7 +653,7 @@ function renderManage(){
     const rightBtn = s.base
       ? (s.edited?'<button class="restore" onclick="restoreEditBase(\''+s.id+'\')">원문복원</button>':'')
       : '<button class="del" onclick="delCustom(\''+s.id+'\')">삭제</button>';
-    return '<div class="item"><div class="body"><div class="it">'+badge+' '+escapeHtml(s.t)+'</div>'+
+    return '<div class="item"><div class="body"><div class="it">'+badge+' '+hl(s.t)+'</div>'+
       '<div class="sub">'+chips(s.g)+'</div></div>'+
       '<button onclick="editSlogan(\''+s.id+'\')">수정</button>'+rightBtn+'</div>';
   }).join('') || '<div class="empty">후보가 없습니다.</div>';
@@ -662,7 +663,7 @@ function renderManage(){
   const ents=Object.entries(store.eliminated).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
   document.getElementById('elimCnt').textContent = ents.length+"편";
   document.getElementById('elimList').innerHTML = ents.length ? ents.map(([id,info])=>
-    '<div class="item"><div class="body"><div class="it">'+escapeHtml(info.t||id)+'</div>'+
+    '<div class="item"><div class="body"><div class="it">'+hl(info.t||id)+'</div>'+
     '<div class="reason">사유: '+(info.reason?escapeHtml(info.reason):'<i style="color:var(--sub);font-weight:500">미기재</i>')+'</div></div>'+
     '<button class="restore" onclick="restoreElim(\''+id+'\')">복구</button></div>').join('')
     : '<div class="empty">탈락(영구 제외)된 슬로건이 없습니다.</div>';
@@ -678,12 +679,14 @@ function renderRank(){
     : "아직 집계가 없습니다. 한 판을 끝내면 슬로건별 성적이 쌓입니다.";
   const body = document.getElementById('rankBody');
   if(!entries.length){ body.innerHTML = '<tr><td colspan="6" class="empty">한 판을 끝내면 슬로건별 성적(출전·최고진출·우승·픽승)이 쌓입니다.</td></tr>'; return; }
-  body.innerHTML = entries.map((e,i)=>'<tr><td class="n">'+(i+1)+'</td><td>'+escapeHtml(e.t)+'</td>'+
+  body.innerHTML = entries.map((e,i)=>'<tr><td class="n">'+(i+1)+'</td><td>'+hl(e.t)+'</td>'+
     '<td class="c">'+(e.appear||0)+'</td><td class="c">'+bestLabel(e.best)+'</td>'+
     '<td class="c">'+(e.champ||0)+'</td><td class="c">'+(e.pick||0)+'</td></tr>').join('');
 }
 function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; store.stats={}; save(); renderRank(); } }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const KW = ["동구","행복","북항","변화"];   // 버건디 강조 키워드
+function hl(t){ let s=escapeHtml(t); KW.forEach(k=>{ s=s.split(k).join('<span class="kw">'+k+'</span>'); }); return s; }
 
 function showTab(name){
   if(name==='manage' && !adminUnlocked){
