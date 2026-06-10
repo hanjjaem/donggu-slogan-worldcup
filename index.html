@@ -175,6 +175,8 @@
   thead th{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--sub); font-weight:700;
     text-align:left; padding:8px 10px; border-bottom:2px solid var(--ink);}
   th.w,td.w{text-align:right; white-space:nowrap;}
+  th.c,td.c{text-align:center; width:58px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  tbody td.c{font-size:14px; color:var(--ink);}
   tbody td{padding:13px 10px; border-bottom:1px solid var(--rule2); font-family:var(--serif); font-size:16px;}
   td.n{width:46px; text-align:center; font-weight:800; color:var(--sub);}
   td.w{width:80px; font-weight:800;}
@@ -362,7 +364,7 @@
         <h3>누적 우승 랭킹</h3>
         <div class="runs" id="runsInfo">아직 진행 기록이 없습니다.</div>
         <table>
-          <thead><tr><th class="n">순위</th><th>슬로건</th><th class="w">우승</th></tr></thead>
+          <thead><tr><th class="n">#</th><th>슬로건</th><th class="c">출전</th><th class="c">최고</th><th class="c">우승</th><th class="c">픽승</th></tr></thead>
           <tbody id="rankBody"></tbody>
         </table>
         <button class="reset" onclick="resetStats()">누적 기록 초기화</button>
@@ -409,12 +411,13 @@ const KEY = "donggu_slogan_wc_v5";
 
 let store = load();          // {wins,runs,eliminated:{id:{reason,ts,t}},custom:[{id,t,g}],edits:{id:{t,g}},cid}
 let round=[], next=[], idx=0, roundNum=1, busy=false;
+let gameReach={}, gamePick={};   // 이번 판: 슬로건별 최고도달 라운드크기 / 맞대결 승수
 
 function load(){
   let d; try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){ d=null; }
   d = d || {};
   d.wins = d.wins||{}; d.runs = d.runs||0; d.eliminated = d.eliminated||{};
-  d.custom = d.custom||[]; d.edits = d.edits||{}; d.cid = d.cid||0;
+  d.custom = d.custom||[]; d.edits = d.edits||{}; d.cid = d.cid||0; d.stats = d.stats||{};
   return d;
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(store)); }
@@ -439,6 +442,7 @@ function startGame(){
   }
   round = shuffle(pool);
   next=[]; idx=0; roundNum=1; busy=false;
+  gameReach={}; gamePick={}; round.forEach(s=>{ gameReach[s.t]=round.length; });
   document.getElementById('result').style.display='none';
   document.getElementById('game').style.display='block';
   const dz=document.getElementById('duel'); if(dz) dz.classList.remove('leaving','entering');
@@ -475,10 +479,10 @@ function decide(kind){
   const mode = document.getElementById('mode').value;
   const L = round[idx], R = round[idx+1];
   if(kind==='L'){
-    next.push(L);
+    next.push(L); gamePick[L.t]=(gamePick[L.t]||0)+1;
     if(mode==='all') permaEliminate([R], "비교 열세");
   }else if(kind==='R'){
-    next.push(R);
+    next.push(R); gamePick[R.t]=(gamePick[R.t]||0)+1;
     if(mode==='all') permaEliminate([L], "비교 열세");
   }else if(kind==='P'){
     next.push(L, R);
@@ -506,6 +510,7 @@ function stepForward(duel){
       if(survivors.length===1) finishChampion(survivors[0]); else finishResult(survivors);
       busy=false; return;
     }
+    survivors.forEach(s=>{ const c=gameReach[s.t]; gameReach[s.t]=(c==null?survivors.length:Math.min(c,survivors.length)); });
     round = survivors; next=[]; idx=0; roundNum++;
     announceRound(()=>{ render(); duelEnter(duel); busy=false; });
     return;
@@ -525,14 +530,22 @@ function stopNow(){
   finishResult(survivors);
 }
 
+function statOf(t){ if(!store.stats) store.stats={}; if(!store.stats[t]) store.stats[t]={appear:0,best:99999,champ:0,pick:0}; return store.stats[t]; }
+function commitGame(championText){
+  if(championText) gameReach[championText]=1;
+  for(const t in gameReach){ const st=statOf(t); st.appear++; if(gameReach[t]<st.best) st.best=gameReach[t]; }
+  for(const t in gamePick){ statOf(t).pick += gamePick[t]; }
+  if(championText){ statOf(championText).champ++; store.wins[championText]=(store.wins[championText]||0)+1; store.runs=(store.runs||0)+1; }
+  save();
+}
 function finishChampion(champ){
-  store.wins[champ.t] = (store.wins[champ.t]||0)+1;
-  store.runs = (store.runs||0)+1; save();
+  commitGame(champ.t);
   showResult('<div class="crown">🏆</div><div class="label">최종 선정</div>'+
     '<div class="champ">'+escapeHtml(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
   renderRank();
 }
 function finishResult(survivors){
+  commitGame(null);
   let html;
   if(survivors.length === 0){
     html = '<div class="crown">✖</div><div class="label">전원 탈락</div>'+
@@ -543,6 +556,7 @@ function finishResult(survivors){
              '<div class="row"><b>'+escapeHtml(s.t)+'</b><span class="mini">'+chips(s.g)+'</span></div>').join('')+'</div>';
   }
   showResult(html);
+  renderRank();
 }
 function showResult(innerHtml){
   document.getElementById('game').style.display='none';
@@ -614,15 +628,21 @@ function renderManage(){
     : '<div class="empty">탈락(영구 제외)된 슬로건이 없습니다.</div>';
 }
 
+function bestLabel(sz){ if(sz==null||sz>=99999) return '–'; return sz<=1?'🏆우승':(sz===2?'결승':sz+'강'); }
 function renderRank(){
-  const entries = Object.entries(store.wins).sort((a,b)=>b[1]-a[1]);
-  document.getElementById('runsInfo').textContent =
-    store.runs ? ("단독 우승으로 끝난 " + store.runs + "회 집계 · 우승 경험 " + entries.length + "편") : "아직 진행 기록이 없습니다.";
+  const stats = store.stats||{};
+  const entries = Object.keys(stats).map(t=>Object.assign({t:t}, stats[t]));
+  entries.sort((a,b)=> (b.champ-a.champ) || (a.best-b.best) || (b.pick-a.pick) || (b.appear-a.appear));
+  document.getElementById('runsInfo').textContent = entries.length
+    ? ("완료 "+(store.runs||0)+"판 집계 · 등록 슬로건 "+entries.length+"편 · ‘최고’=도달한 가장 높은 라운드")
+    : "아직 집계가 없습니다. 한 판을 끝내면 슬로건별 성적이 쌓입니다.";
   const body = document.getElementById('rankBody');
-  if(!entries.length){ body.innerHTML = '<tr><td colspan="3" class="empty">우승자 1편으로 끝나면 여기에 쌓입니다.</td></tr>'; return; }
-  body.innerHTML = entries.map((e,i)=>'<tr><td class="n">'+(i+1)+'</td><td>'+escapeHtml(e[0])+'</td><td class="w">'+e[1]+'회</td></tr>').join('');
+  if(!entries.length){ body.innerHTML = '<tr><td colspan="6" class="empty">한 판을 끝내면 슬로건별 성적(출전·최고진출·우승·픽승)이 쌓입니다.</td></tr>'; return; }
+  body.innerHTML = entries.map((e,i)=>'<tr><td class="n">'+(i+1)+'</td><td>'+escapeHtml(e.t)+'</td>'+
+    '<td class="c">'+(e.appear||0)+'</td><td class="c">'+bestLabel(e.best)+'</td>'+
+    '<td class="c">'+(e.champ||0)+'</td><td class="c">'+(e.pick||0)+'</td></tr>').join('');
 }
-function resetStats(){ if(confirm("누적 우승 기록을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; save(); renderRank(); } }
+function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; store.stats={}; save(); renderRank(); } }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
 function showTab(name){
