@@ -665,19 +665,23 @@ function stopNow(){
 function statOf(t){ if(!store.stats) store.stats={}; if(!store.stats[t]) store.stats[t]={appear:0,best:99999,champ:0,pick:0}; return store.stats[t]; }
 function commitGame(championText){
   if(championText) gameReach[championText]=1;
+  // 로컬 폴백 누적(오프라인·서버 장애 시 표시용)
   for(const t in gameReach){ const st=statOf(t); st.appear++; if(gameReach[t]<st.best) st.best=gameReach[t]; }
   for(const t in gamePick){ statOf(t).pick += gamePick[t]; }
   if(championText){ statOf(championText).champ++; store.wins[championText]=(store.wins[championText]||0)+1; store.runs=(store.runs||0)+1; }
   save();
+  // 서버(Supabase)에 이 판 결과를 1행으로 append → 모든 참여자 합산·영구 보존
+  const items=[]; for(const t in gameReach){ items.push({t:t, reach:gameReach[t], pick:gamePick[t]||0}); }
+  return pushGame({champion: championText||null, items: items});   // 저장(커밋) 완료 promise 반환
 }
 function finishChampion(champ){
-  commitGame(champ.t);
+  const saved=commitGame(champ.t);
   showResult('<div class="crown">🏆</div><div class="label">최종 선정</div>'+
     '<div class="champ">'+cardHtml(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
-  renderRank();
+  Promise.resolve(saved).then(()=>renderRank());   // 서버 저장 커밋 후 랭킹 갱신(방금 판 즉시 반영)
 }
 function finishResult(survivors){
-  commitGame(null);
+  const saved=commitGame(null);
   let html;
   if(survivors.length === 0){
     html = '<div class="crown">✖</div><div class="label">전원 탈락</div>'+
@@ -688,7 +692,7 @@ function finishResult(survivors){
              '<div class="row"><b>'+hl(s.t)+'</b><span class="mini">'+chips(s.g)+'</span></div>').join('')+'</div>';
   }
   showResult(html);
-  renderRank();
+  Promise.resolve(saved).then(()=>renderRank());   // 서버 저장 커밋 후 랭킹 갱신
 }
 function showResult(innerHtml){
   document.getElementById('game').style.display='none';
@@ -761,16 +765,38 @@ function renderManage(){
 }
 
 function bestLabel(sz){ if(sz==null||sz>=99999) return '–'; return sz<=1?'🏆우승':(sz===2?'결승':sz+'강'); }
-function renderRank(){
-  const stats = store.stats||{};
+// 서버 게임행들을 슬로건별 통계로 합산
+function aggregateGames(rows){
+  const stats={}; let runs=0;
+  const get=t=>stats[t]||(stats[t]={appear:0,best:99999,champ:0,pick:0});
+  rows.forEach(row=>{ const d=row.data||{}; runs++;
+    (d.items||[]).forEach(it=>{ const s=get(it.t); s.appear++; if(it.reach!=null && it.reach<s.best) s.best=it.reach; s.pick+=(it.pick||0); });
+    if(d.champion) get(d.champion).champ++;
+  });
+  return {stats, runs};
+}
+async function renderRank(){
+  const info=document.getElementById('runsInfo'); if(info) info.textContent="랭킹 불러오는 중…";
+  let stats=null, runs=0, source='local';
+  if(SB_URL){
+    try{
+      const r=await fetch(GAMES_EP+'?select=data&order=id.asc&limit=20000',{headers:sbHeaders()});
+      if(r.ok){ const rows=await r.json(); const agg=aggregateGames(rows); stats=agg.stats; runs=agg.runs; source='server'; }
+    }catch(e){}
+  }
+  if(stats===null){ stats=store.stats||{}; runs=store.runs||0; }   // 서버 실패 시 로컬 폴백
+  paintRank(stats, runs, source);
+}
+function paintRank(stats, runs, source){
   const entries = Object.keys(stats).map(t=>Object.assign({t:t}, stats[t]));
   entries.sort((a,b)=> (b.champ-a.champ) || (a.best-b.best) || (b.pick-a.pick) || (b.appear-a.appear));
   const top=document.getElementById('rankTop');
   if(top) top.innerHTML = entries.length
     ? '<div class="rt-label">🏆 현재 1위</div><div class="rt-slogan">'+cardHtml(entries[0].t)+'</div>'
     : '';
+  const note = source==='server' ? "전체 참여자 합산" : "이 기기 임시기록(서버 연결 안 됨)";
   document.getElementById('runsInfo').textContent = entries.length
-    ? ("완료 "+(store.runs||0)+"판 집계 · 등록 슬로건 "+entries.length+"편 · ‘최고’=도달한 가장 높은 라운드")
+    ? ("완료 "+runs+"판 집계 · "+note+" · 등록 슬로건 "+entries.length+"편 · ‘최고’=도달한 가장 높은 라운드")
     : "아직 집계가 없습니다. 한 판을 끝내면 슬로건별 성적이 쌓입니다.";
   const body = document.getElementById('rankBody');
   if(!entries.length){ body.innerHTML = '<tr><td colspan="6" class="empty">한 판을 끝내면 슬로건별 성적(출전·최고진출·우승·픽승)이 쌓입니다.</td></tr>'; return; }
@@ -778,7 +804,10 @@ function renderRank(){
     '<td class="c">'+(e.appear||0)+'</td><td class="c">'+bestLabel(e.best)+'</td>'+
     '<td class="c">'+(e.champ||0)+'</td><td class="c">'+(e.pick||0)+'</td></tr>').join('');
 }
-function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을 모두 지울까요? (탈락 목록·추가 슬로건은 유지)")){ store.wins={}; store.runs=0; store.stats={}; save(); renderRank(); } }
+function resetStats(){
+  alert("랭킹은 이제 서버(Supabase)에 모든 참여자 기록이 합산 저장됩니다.\n전체 초기화는 Supabase 대시보드 → Table Editor → games 테이블에서 행을 삭제해 주세요.\n(아래는 이 브라우저의 임시 로컬기록만 비웁니다.)");
+  store.wins={}; store.runs=0; store.stats={}; save(); renderRank();
+}
 
 /* ── 타 구·군 민선 7·8기 비전·세부목표 (참고) ── */
 const VISIONS=[
@@ -840,6 +869,12 @@ function showTab(name){
 const SB_URL = "https://orprpgdatlqnoampscuj.supabase.co";   // Supabase 프로젝트 URL
 const SB_KEY = "sb_publishable_P1rZPwOUdS3E25mqnsXfmw_FcTRGx8A";   // publishable(공개) 키
 function sbHeaders(){ return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}; }
+const GAMES_EP = SB_URL+'/rest/v1/games';   // 랭킹 집계용 게임결과 테이블(append-only)
+async function pushGame(rec){
+  if(!SB_URL) return false;
+  try{ const r=await fetch(GAMES_EP,{method:'POST',headers:Object.assign(sbHeaders(),{'Prefer':'return=minimal'}),body:JSON.stringify({data:rec})}); return r.ok; }
+  catch(e){ return false; }   // 오프라인: 로컬 폴백 통계가 남음
+}
 function openComments(){ document.getElementById('comments').classList.add('open'); document.getElementById('commentsBack').classList.add('open'); loadComments(); }
 function closeComments(){ document.getElementById('comments').classList.remove('open'); document.getElementById('commentsBack').classList.remove('open'); }
 function fmtTime(s){ try{ return new Date(s).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
