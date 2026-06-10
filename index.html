@@ -209,6 +209,8 @@
   .dot{width:9px; height:9px; border-radius:50%; border:1px solid var(--rule); background:transparent; transition:.2s;}
   .dot.done{background:var(--accent); border-color:var(--accent);}
   .dot.cur{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .bye-note{text-align:center; font-family:var(--serif); font-style:italic; font-size:13px;
+    color:var(--accent); margin:-6px 0 14px; min-height:18px;}
   /* 카드 전환 */
   #duel{transition:opacity .24s ease, transform .24s ease;}
   #duel.leaving{opacity:0; transform:translateY(-10px);}
@@ -301,6 +303,7 @@
       <section id="game">
         <div class="rd-min" id="roundTag">라운드 1</div>
         <div class="dots" id="dots"></div>
+        <div class="bye-note" id="byeNote"></div>
         <div class="duel" id="duel">
           <button class="pick left" id="cardL" onclick="decide('L')"><span class="txt" id="txtL"></span></button>
           <button class="pick right" id="cardR" onclick="decide('R')"><span class="txt" id="txtR"></span></button>
@@ -412,6 +415,20 @@ const KEY = "donggu_slogan_wc_v5";
 let store = load();          // {wins,runs,eliminated:{id:{reason,ts,t}},custom:[{id,t,g}],edits:{id:{t,g}},cid}
 let round=[], next=[], idx=0, roundNum=1, busy=false;
 let gameReach={}, gamePick={};   // 이번 판: 슬로건별 최고도달 라운드크기 / 맞대결 승수
+let pendingBye=null, lastByeText=null;   // 이번 라운드 부전승 / 직전 라운드 부전승(연속 방지)
+
+// 홀수 라운드면 부전승 1명을 공정하게 선정해 배열 맨 뒤로 보낸다(맨 뒤가 자동 부전승됨)
+function prepareRound(arr){
+  pendingBye=null;
+  if(arr.length % 2 === 1){
+    let cands = arr.filter(s=>s.t!==lastByeText);
+    if(!cands.length) cands = arr;                       // 모두 직전 부전승이면(이론상) 전체에서
+    const pick = cands[Math.random()*cands.length|0];
+    arr.splice(arr.indexOf(pick),1); arr.push(pick);     // 맨 뒤로 이동 → 짝 안 맞는 마지막이 됨
+    pendingBye = pick; lastByeText = pick.t;
+  }
+  return arr;
+}
 
 function load(){
   let d; try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){ d=null; }
@@ -442,6 +459,7 @@ function startGame(){
   }
   round = shuffle(pool);
   next=[]; idx=0; roundNum=1; busy=false;
+  lastByeText=null; prepareRound(round);
   gameReach={}; gamePick={}; round.forEach(s=>{ gameReach[s.t]=round.length; });
   document.getElementById('result').style.display='none';
   document.getElementById('game').style.display='block';
@@ -455,12 +473,14 @@ function render(){
   setCard('R', round[idx+1]);
 }
 function renderProgress(){
-  const totalUnits = Math.ceil(round.length/2);
+  const totalUnits = Math.floor(round.length/2);   // 실제 경기 수(부전승 제외)
   const cur = Math.floor(idx/2);
-  document.getElementById('roundTag').textContent = roundLabel(round.length) + " · " + (cur+1) + " / " + totalUnits + " 경기";
+  document.getElementById('roundTag').textContent = roundLabel(round.length) + " · " + Math.min(cur+1,totalUnits) + " / " + totalUnits + " 경기";
   let d='';
   for(let i=0;i<totalUnits;i++) d += '<span class="dot'+(i<cur?' done':(i===cur?' cur':''))+'"></span>';
   document.getElementById('dots').innerHTML = d;
+  const bn=document.getElementById('byeNote');
+  if(bn) bn.textContent = pendingBye ? ('🎫 부전승 ‘'+pendingBye.t+'’ 자동 진출') : '';
 }
 function roundLabel(n){ return n<=2 ? "결승" : (n+"강"); }
 function setCard(side, item){
@@ -511,7 +531,7 @@ function stepForward(duel){
       busy=false; return;
     }
     survivors.forEach(s=>{ const c=gameReach[s.t]; gameReach[s.t]=(c==null?survivors.length:Math.min(c,survivors.length)); });
-    round = survivors; next=[]; idx=0; roundNum++;
+    round = survivors; next=[]; idx=0; roundNum++; prepareRound(round);
     announceRound(()=>{ render(); duelEnter(duel); busy=false; });
     return;
   }
