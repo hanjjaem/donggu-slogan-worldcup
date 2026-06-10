@@ -504,7 +504,7 @@ function renderProgress(){
 }
 function roundLabel(n){ return n<=2 ? "결승" : (n+"강"); }
 function setCard(side, item){
-  document.getElementById('txt'+side).innerHTML = hl(item.t);
+  document.getElementById('txt'+side).innerHTML = cardHtml(item.t);
   const tg=document.getElementById('tags'+side); if(tg) tg.innerHTML = chips(item.g);
   document.getElementById('card'+side).classList.remove('flash');
 }
@@ -582,7 +582,7 @@ function commitGame(championText){
 function finishChampion(champ){
   commitGame(champ.t);
   showResult('<div class="crown">🏆</div><div class="label">최종 선정</div>'+
-    '<div class="champ">'+hl(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
+    '<div class="champ">'+cardHtml(champ.t)+'</div><div class="ctags">'+chips(champ.g)+'</div>');
   renderRank();
 }
 function finishResult(survivors){
@@ -687,6 +687,8 @@ function resetStats(){ if(confirm("누적 기록(슬로건별 성적·우승)을
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const KW = ["동구","행복","북항","변화"];   // 버건디 강조 키워드
 function hl(t){ let s=escapeHtml(t); KW.forEach(k=>{ s=s.split(k).join('<span class="kw">'+k+'</span>'); }); return s; }
+// 카드/결과용: 강조 + 구분기호(, !) 뒤에서 줄바꿈
+function cardHtml(t){ return hl(t).replace(/([,!]) /g, '$1<br>'); }
 
 function showTab(name){
   if(name==='manage' && !adminUnlocked){
