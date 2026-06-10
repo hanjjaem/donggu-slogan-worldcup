@@ -773,16 +773,14 @@ const VISIONS=[
  {r:"기장군", v7:"전통과 첨단이 조화되는, 빛과 물 그리고 꿈의 도시 기장", g7:["찾아가는 현장행정","풍요로운 경제행정","인재양성 교육행정","움직이는 감동행정","함께하는 복지행정"], v8:"행복을 품은 도시, 미래를 여는 기장", g8:["다함께 행복도시","융복합 미래도시","지속가능한 소통도시","사통팔달 교통도시"]}
 ];
 function renderVisions(){
-  const goals=g=>'<ul class="goals">'+g.map(x=>'<li>'+hl(x)+'</li>').join('')+'</ul>';
   const rows=VISIONS.map((d,i)=>'<tr'+(d.r==='동구'?' class="me"':'')+'>'+
     '<td class="c">'+i+'</td>'+
     '<td class="region">'+escapeHtml(d.r)+(d.r==='동구'?' ★':'')+'</td>'+
-    '<td class="vision">'+hl(d.v7)+'</td><td>'+goals(d.g7)+'</td>'+
-    '<td class="vision">'+hl(d.v8)+'</td><td>'+goals(d.g8)+'</td></tr>').join('');
+    '<td class="vision">'+hl(d.v7)+'</td>'+
+    '<td class="vision">'+hl(d.v8)+'</td></tr>').join('');
   document.getElementById('visionList').innerHTML =
     '<table class="vtable"><thead>'+
-    '<tr><th rowspan="2">연번</th><th rowspan="2">구·군</th><th colspan="2">민선 7기</th><th colspan="2">민선 8기</th></tr>'+
-    '<tr><th>비전</th><th>세부목표</th><th>비전</th><th>세부목표</th></tr>'+
+    '<tr><th>연번</th><th>구·군</th><th>민선 7기 비전</th><th>민선 8기 비전</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table>';
 }
 function openVision(){ renderVisions(); document.getElementById('vision').classList.add('open'); document.getElementById('visionBack').classList.add('open'); }
