@@ -25,42 +25,45 @@
     font-family:var(--sans); color:var(--ink); background:var(--paper);
     background-image:radial-gradient(rgba(120,108,84,.05) 1px, transparent 1px);
     background-size:4px 4px;
-    min-height:100vh; padding:30px 18px 60px; line-height:1.5;
+    height:100dvh; overflow:hidden; padding:12px 16px 10px; line-height:1.5;
+    display:flex; flex-direction:column; align-items:center;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1080px; margin:0 auto;}
+  .wrap{max-width:1080px; width:100%; margin:0 auto; flex:1; min-height:0; display:flex; flex-direction:column;}
 
   /* ── 마스트헤드 ── */
-  .masthead{text-align:center;}
-  .masthead .toprule{border-top:3px double var(--ink); margin-bottom:10px;}
-  .kicker{font-size:12px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent);
-    font-weight:700; margin-bottom:10px;}
+  .masthead{text-align:center; flex:none;}
+  .masthead .toprule{border-top:3px double var(--ink); margin-bottom:6px;}
+  .kicker{font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent);
+    font-weight:700; margin-bottom:4px;}
   .masthead h1{font-family:var(--serif); font-weight:900; letter-spacing:-.5px; word-break:keep-all;
-    font-size:clamp(34px,6.5vw,62px); line-height:1.05; color:var(--ink);}
+    font-size:clamp(22px,4.2vw,40px); line-height:1.05; color:var(--ink);}
   .masthead .dek{font-family:var(--serif); font-style:italic; color:var(--sub);
-    font-size:clamp(14px,1.8vw,18px); margin-top:12px;}
-  .masthead .botrule{display:flex; align-items:center; gap:14px; margin-top:16px;}
+    font-size:clamp(12px,1.6vw,15px); margin-top:5px;}
+  .masthead .botrule{display:flex; align-items:center; gap:14px; margin-top:8px;}
   .masthead .botrule:before,.masthead .botrule:after{content:""; flex:1; border-top:1px solid var(--ink);}
-  .masthead .botrule span{font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--sub); font-weight:700;}
+  .masthead .botrule span{font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--sub); font-weight:700;}
 
   /* ── 섹션 내비 ── */
-  .tabs{display:flex; justify-content:center; gap:0; margin:22px 0 4px; flex-wrap:wrap;}
+  .tabs{display:flex; justify-content:center; gap:0; margin:10px 0 2px; flex-wrap:wrap; flex:none;}
   .tabs button{font-family:var(--serif); font-weight:700; font-size:17px; color:var(--sub);
     background:none; border:0; cursor:pointer; padding:10px 22px; position:relative; transition:.15s;}
   .tabs button+button{border-left:1px solid var(--rule);}
   .tabs button:hover{color:var(--ink);}
   .tabs button.active{color:var(--accent);}
   .tabs button.active:after{content:""; position:absolute; left:22px; right:22px; bottom:2px; height:2px; background:var(--accent);}
+  .tab{flex:1; min-height:0; overflow:auto;}
   .tab[hidden]{display:none;}
-  .site-footer{width:100%; margin:24px auto 0; padding:12px 18px;
-    background:rgba(16,20,28,.42); border:1px solid rgba(255,255,255,.22); border-radius:12px;
-    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+  #tabGame{display:flex; flex-direction:column;}
+  #tabGame #game{flex:1; display:flex; flex-direction:column; min-height:0;}
+  #tabGame .duel{flex:1; min-height:0;}
+  #tabGame .pick{min-height:0;}
+  .site-footer{width:100%; flex:none; margin-top:8px; padding:6px 2px 0;
     display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-  .site-footer span{font-family:var(--serif); font-style:italic; font-size:12.5px; color:rgba(255,255,255,.9);}
-  .site-footer button{font-family:var(--serif); font-weight:700; font-size:13px; color:#fff;
-    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.35); border-radius:8px;
-    padding:8px 15px; cursor:pointer; transition:.15s;}
-  .site-footer button:hover{background:var(--accent); border-color:var(--accent);}
+  .site-footer span{font-family:var(--serif); font-style:italic; font-size:12px; color:var(--sub);}
+  .site-footer button{font-family:var(--serif); font-weight:700; font-size:12.5px; color:var(--ink);
+    background:none; border:1px solid var(--rule); border-radius:8px; padding:6px 13px; cursor:pointer; transition:.15s;}
+  .site-footer button:hover{background:var(--ink); color:var(--sheet);}
 
   /* 구·군 비전 — 엑셀형 표(녹색) */
   .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13px; margin-bottom:12px;}
@@ -79,8 +82,9 @@
   .vtable tr.me td.region{color:var(--accent);}
 
   /* ── 시트 ── */
-  .sheet{background:var(--sheet); border:1px solid var(--rule); margin-top:18px;
-    padding:clamp(20px,3.4vw,44px); box-shadow:0 1px 0 var(--rule),  6px 8px 0 rgba(28,26,21,.05);}
+  .sheet{background:var(--sheet); border:1px solid var(--rule); margin-top:10px;
+    padding:clamp(16px,2.2vw,28px); box-shadow:0 1px 0 var(--rule), 6px 8px 0 rgba(28,26,21,.05);
+    flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column;}
 
   /* 게임 상단 컨트롤 */
   .topline{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
