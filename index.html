@@ -202,6 +202,24 @@
   .foot button:hover{color:var(--accent);}
   .foot .dot{color:var(--rule);}
   .kb{text-align:center; font-size:11px; color:var(--sub); opacity:.55; margin-top:14px; letter-spacing:.03em;}
+  /* 진행 점 */
+  .dots{display:flex; gap:7px; justify-content:center; margin:0 0 18px; flex-wrap:wrap;}
+  .dot{width:9px; height:9px; border-radius:50%; border:1px solid var(--rule); background:transparent; transition:.2s;}
+  .dot.done{background:var(--accent); border-color:var(--accent);}
+  .dot.cur{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  /* 카드 전환 */
+  #duel{transition:opacity .24s ease, transform .24s ease;}
+  #duel.leaving{opacity:0; transform:translateY(-10px);}
+  #duel.entering{animation:duelEnter .3s ease;}
+  @keyframes duelEnter{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+  /* 라운드 전환 배너 */
+  .round-anno{position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; opacity:0; background:rgba(241,235,221,.55);}
+  .round-anno.show{animation:annoShow 1.05s ease forwards;}
+  .round-anno .badge{font-family:var(--serif); font-weight:900; letter-spacing:-2px; color:var(--accent);
+    font-size:clamp(54px,14vw,140px); text-shadow:0 6px 24px rgba(20,18,14,.15);}
+  @keyframes annoShow{0%{opacity:0; transform:scale(.85);} 22%{opacity:1; transform:scale(1);}
+    74%{opacity:1; transform:scale(1);} 100%{opacity:0; transform:scale(1.06);}}
   .setbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
     padding:2px 2px 16px; border-bottom:1px solid var(--ink); margin-bottom:6px;}
   .setbar label{font-size:12px; letter-spacing:.04em; color:var(--sub); font-weight:700; display:flex; align-items:center; gap:8px;}
@@ -280,7 +298,8 @@
     <div id="tabGame" class="tab">
       <section id="game">
         <div class="rd-min" id="roundTag">라운드 1</div>
-        <div class="duel">
+        <div class="dots" id="dots"></div>
+        <div class="duel" id="duel">
           <button class="pick left" id="cardL" onclick="decide('L')"><span class="txt" id="txtL"></span></button>
           <button class="pick right" id="cardR" onclick="decide('R')"><span class="txt" id="txtR"></span></button>
         </div>
@@ -365,6 +384,7 @@
     <div class="gongbo-body" id="gongboBody"></div>
   </aside>
   <div id="lightbox" class="lightbox" onclick="closeZoom()"><img id="lightboxImg" alt="확대 보기"></div>
+  <div id="roundAnno" class="round-anno"><span class="badge"></span></div>
 </div>
 
 <script>
@@ -421,17 +441,24 @@ function startGame(){
   next=[]; idx=0; roundNum=1; busy=false;
   document.getElementById('result').style.display='none';
   document.getElementById('game').style.display='block';
+  const dz=document.getElementById('duel'); if(dz) dz.classList.remove('leaving','entering');
   render();
 }
 
 function render(){
-  const totalUnits = Math.ceil(round.length/2);
-  const doneUnits = Math.floor(idx/2);
-  document.getElementById('roundTag').textContent = roundLabel(round.length) + " · " + (doneUnits+1) + "/" + totalUnits;
+  renderProgress();
   setCard('L', round[idx]);
   setCard('R', round[idx+1]);
 }
-function roundLabel(n){ return n>=2 ? (n+"강") : "결승"; }
+function renderProgress(){
+  const totalUnits = Math.ceil(round.length/2);
+  const cur = Math.floor(idx/2);
+  document.getElementById('roundTag').textContent = roundLabel(round.length) + " · " + (cur+1) + " / " + totalUnits + " 경기";
+  let d='';
+  for(let i=0;i<totalUnits;i++) d += '<span class="dot'+(i<cur?' done':(i===cur?' cur':''))+'"></span>';
+  document.getElementById('dots').innerHTML = d;
+}
+function roundLabel(n){ return n<=2 ? "결승" : (n+"강"); }
 function setCard(side, item){
   document.getElementById('txt'+side).textContent = item.t;
   const tg=document.getElementById('tags'+side); if(tg) tg.innerHTML = chips(item.g);
@@ -448,13 +475,13 @@ function decide(kind){
   const mode = document.getElementById('mode').value;
   const L = round[idx], R = round[idx+1];
   if(kind==='L'){
-    next.push(L); flash('cardL');
+    next.push(L);
     if(mode==='all') permaEliminate([R], "비교 열세");
   }else if(kind==='R'){
-    next.push(R); flash('cardR');
+    next.push(R);
     if(mode==='all') permaEliminate([L], "비교 열세");
   }else if(kind==='P'){
-    next.push(L, R); flash('cardL'); flash('cardR');
+    next.push(L, R);
   }else if(kind==='F'){
     if(mode!=='off'){
       const reason = prompt("두 슬로건을 탈락(영구 제외)합니다.\n사유를 적어주세요. (취소 시 탈락하지 않음)", "");
@@ -462,21 +489,35 @@ function decide(kind){
       permaEliminate([L, R], reason);
     }
   }
+  if(kind==='L'||kind==='P') flash('cardL');
+  if(kind==='R'||kind==='P') flash('cardR');
   idx += 2;
-  setTimeout(advance, 200);
+  const duel=document.getElementById('duel');
+  setTimeout(()=>{ duel.classList.add('leaving'); setTimeout(()=>stepForward(duel), 240); }, 170);
 }
 function flash(id){ document.getElementById(id).classList.add('flash'); }
 
-function advance(){
-  if(round.length - idx === 1){ next.push(round[idx]); idx += 1; }
-  if(idx >= round.length){ endRound(); return; }
-  busy=false; render();
+function stepForward(duel){
+  if(round.length - idx === 1){ next.push(round[idx]); idx += 1; }  // 부전승
+  if(idx >= round.length){
+    const survivors = next.slice();
+    if(survivors.length <= 1){
+      duel.classList.remove('leaving');
+      if(survivors.length===1) finishChampion(survivors[0]); else finishResult(survivors);
+      busy=false; return;
+    }
+    round = survivors; next=[]; idx=0; roundNum++;
+    announceRound(()=>{ render(); duelEnter(duel); busy=false; });
+    return;
+  }
+  render(); duelEnter(duel); busy=false;
 }
-function endRound(){
-  const survivors = next.slice();
-  if(survivors.length === 1){ finishChampion(survivors[0]); return; }
-  if(survivors.length === 0){ finishResult([]); return; }
-  round = survivors; next=[]; idx=0; roundNum++; busy=false; render();
+function duelEnter(duel){ duel.classList.remove('leaving'); duel.classList.add('entering'); setTimeout(()=>duel.classList.remove('entering'), 300); }
+function announceRound(cb){
+  const o=document.getElementById('roundAnno');
+  o.querySelector('.badge').textContent = roundLabel(round.length);
+  o.classList.remove('show'); void o.offsetWidth; o.classList.add('show');
+  setTimeout(()=>{ if(cb) cb(); }, 1050);
 }
 function stopNow(){
   const survivors = next.concat(round.slice(idx));
