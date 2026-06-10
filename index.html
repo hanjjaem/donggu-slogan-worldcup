@@ -53,20 +53,20 @@
   .tabs button.active:after{content:""; position:absolute; left:22px; right:22px; bottom:2px; height:2px; background:var(--accent);}
   .tab[hidden]{display:none;}
 
-  /* 구·군 비전 탭 — 엑셀형 표 */
-  .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13.5px; margin-bottom:10px;}
-  .vscroll{overflow:auto; max-height:78vh; border:1px solid var(--ink);}
+  /* 구·군 비전 — 엑셀형 표(녹색) */
+  .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13px; margin-bottom:12px;}
   .vtable{border-collapse:collapse; width:100%; font-size:13px; background:#fff;}
-  .vtable th,.vtable td{border:1px solid var(--rule); padding:8px 10px; vertical-align:top; text-align:left;}
-  .vtable thead th{position:sticky; top:0; z-index:2; background:#ece8dc; font-family:var(--sans);
-    font-weight:700; font-size:12px; text-align:center; letter-spacing:.02em;}
-  .vtable thead tr:nth-child(2) th{top:33px; z-index:1;}
-  .vtable td.c{text-align:center; font-weight:700; color:var(--sub); white-space:nowrap;}
+  .vtable th,.vtable td{border:1px solid #c6d6bd; padding:8px 10px; vertical-align:top; text-align:left;}
+  .vtable thead th{position:sticky; top:0; z-index:2; background:#217346; color:#fff; font-family:var(--sans);
+    font-weight:700; font-size:12px; text-align:center; letter-spacing:.02em; border-color:#185c37;}
+  .vtable thead tr:nth-child(2) th{top:33px; z-index:1; background:#2e8b57;}
+  .vtable tbody tr:nth-child(even) td{background:#eef5e8;}   /* 엑셀 줄무늬(연녹) */
+  .vtable td.c{text-align:center; font-weight:700; color:#217346; white-space:nowrap;}
   .vtable td.region{font-family:var(--serif); font-weight:800; white-space:nowrap;}
   .vtable td.vision{font-family:var(--serif); font-weight:700; min-width:150px;}
   .vtable .goals{margin:0; padding-left:16px;}
   .vtable .goals li{line-height:1.55; margin-bottom:2px;}
-  .vtable tr.me td{background:var(--accent-soft);}
+  .vtable tr.me td{background:var(--accent-soft) !important;}   /* 동구 강조(버건디) */
   .vtable tr.me td.region{color:var(--accent);}
 
   /* ── 시트 ── */
@@ -259,11 +259,16 @@
   }
 
   /* ── 공보물 퀵뷰 ── */
-  .gongbo-tab{position:fixed; right:0; top:50%; transform:translateY(-50%);
+  .gongbo-tab{position:fixed; right:0; top:calc(50% - 84px); transform:translateY(-50%);
     background:var(--ink); color:var(--sheet); border:0; font-family:var(--serif); font-weight:700;
     writing-mode:vertical-rl; padding:18px 11px; cursor:pointer; border-radius:8px 0 0 8px;
     letter-spacing:.14em; box-shadow:-3px 3px 12px rgba(20,18,14,.25); z-index:40; font-size:15px;}
   .gongbo-tab:hover{background:var(--accent);}
+  .vision-tab{position:fixed; right:0; top:calc(50% + 84px); transform:translateY(-50%);
+    background:#217346; color:#fff; border:0; font-family:var(--serif); font-weight:700;
+    writing-mode:vertical-rl; padding:18px 11px; cursor:pointer; border-radius:8px 0 0 8px;
+    letter-spacing:.14em; box-shadow:-3px 3px 12px rgba(20,18,14,.25); z-index:40; font-size:15px;}
+  .vision-tab:hover{background:#185c37;}
   .suggest-tab{position:fixed; left:0; top:50%; transform:translateY(-50%);
     background:var(--accent); color:var(--sheet); border:0; font-family:var(--serif); font-weight:700;
     writing-mode:vertical-rl; padding:18px 11px; cursor:pointer; border-radius:0 8px 8px 0;
@@ -338,7 +343,6 @@
   <nav class="tabs">
     <button id="tab-game" class="active" onclick="showTab('game')">토너먼트</button>
     <button id="tab-rank" onclick="showTab('rank')">랭킹</button>
-    <button id="tab-vision" onclick="showTab('vision')">구·군 비전</button>
     <button id="tab-manage" onclick="showTab('manage')">🔒 편집·관리</button>
   </nav>
 
@@ -420,13 +424,6 @@
         </table>
       </div>
     </div><!-- /tabRank -->
-
-    <div id="tabVision" class="tab" hidden>
-      <div class="vision-wrap">
-        <p class="vision-intro">부산 16개 구·군 + 부산시의 <b>민선 7·8기 비전·세부목표</b> (참고 자료). 우리 <b>동구</b>는 강조 표시.</p>
-        <div id="visionList"></div>
-      </div>
-    </div><!-- /tabVision -->
   </main>
 
   <!-- 제안·댓글 -->
@@ -443,6 +440,16 @@
   </aside>
   <!-- 공보물 퀵뷰 -->
   <button id="gongboBtn" class="gongbo-tab" onclick="openGongbo()">📄 공보물</button>
+  <!-- 구·군 비전 -->
+  <button id="visionBtn" class="vision-tab" onclick="openVision()">📊 구·군 비전</button>
+  <div id="visionBack" class="gongbo-back" onclick="closeVision()"></div>
+  <aside id="vision" class="gongbo">
+    <div class="gongbo-head"><strong>구·군 비전 (민선 7·8기)</strong><button class="x" onclick="closeVision()" title="닫기">✕</button></div>
+    <div class="gongbo-body">
+      <p class="vision-intro">부산 16개 구·군 + 부산시의 민선 7·8기 비전·세부목표 (참고). 우리 <b>동구</b>는 강조 표시.</p>
+      <div id="visionList"></div>
+    </div>
+  </aside>
   <div id="gongboBack" class="gongbo-back" onclick="closeGongbo()"></div>
   <aside id="gongbo" class="gongbo" aria-hidden="true">
     <div class="gongbo-head">
@@ -773,11 +780,13 @@ function renderVisions(){
     '<td class="vision">'+hl(d.v7)+'</td><td>'+goals(d.g7)+'</td>'+
     '<td class="vision">'+hl(d.v8)+'</td><td>'+goals(d.g8)+'</td></tr>').join('');
   document.getElementById('visionList').innerHTML =
-    '<div class="vscroll"><table class="vtable"><thead>'+
+    '<table class="vtable"><thead>'+
     '<tr><th rowspan="2">연번</th><th rowspan="2">구·군</th><th colspan="2">민선 7기</th><th colspan="2">민선 8기</th></tr>'+
     '<tr><th>비전</th><th>세부목표</th><th>비전</th><th>세부목표</th></tr>'+
-    '</thead><tbody>'+rows+'</tbody></table></div>';
+    '</thead><tbody>'+rows+'</tbody></table>';
 }
+function openVision(){ renderVisions(); document.getElementById('vision').classList.add('open'); document.getElementById('visionBack').classList.add('open'); }
+function closeVision(){ document.getElementById('vision').classList.remove('open'); document.getElementById('visionBack').classList.remove('open'); }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const KW = ["동구","행복","북항","변화","중심","뚝심","활력","미래","골목"];   // 버건디 강조 키워드
 function hl(t){ let s=escapeHtml(t); KW.forEach(k=>{ s=s.split(k).join('<span class="kw">'+k+'</span>'); }); return s; }
@@ -792,13 +801,12 @@ function showTab(name){
     adminUnlocked = true;
     const t=document.getElementById('tab-manage'); if(t) t.textContent="편집·관리";   // 잠금 해제 표시
   }
-  ['game','rank','vision','manage'].forEach(n=>{
+  ['game','rank','manage'].forEach(n=>{
     document.getElementById('tab'+n[0].toUpperCase()+n.slice(1)).hidden = (n!==name);
     document.getElementById('tab-'+n).classList.toggle('active', n===name);
   });
   if(name==='rank') renderRank();
   if(name==='manage') renderManage();
-  if(name==='vision') renderVisions();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -896,11 +904,13 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(document.getElementById('lightbox').classList.contains('open')) closeZoom();
     else if(document.getElementById('comments').classList.contains('open')) closeComments();
+    else if(document.getElementById('vision').classList.contains('open')) closeVision();
     else closeGongbo();
     return;
   }
   if(document.getElementById('gongbo').classList.contains('open')) return;   // 공보물 열림 중엔 게임키 무시
   if(document.getElementById('comments').classList.contains('open')) return; // 댓글 열림 중엔 게임키 무시
+  if(document.getElementById('vision').classList.contains('open')) return;   // 비전 열림 중엔 게임키 무시
   if(document.getElementById('tabGame').hidden) return;
   if(document.getElementById('game').style.display==='none') return;
   if(/^(INPUT|TEXTAREA)$/.test((e.target.tagName||''))) return;
