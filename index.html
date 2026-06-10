@@ -52,6 +52,12 @@
   .tabs button.active{color:var(--accent);}
   .tabs button.active:after{content:""; position:absolute; left:22px; right:22px; bottom:2px; height:2px; background:var(--accent);}
   .tab[hidden]{display:none;}
+  .site-footer{max-width:1180px; width:100%; margin:24px auto 0; padding-top:14px;
+    border-top:1px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .site-footer span{font-family:var(--serif); font-style:italic; font-size:12px; color:rgba(255,255,255,.7);}
+  .site-footer button{font-family:var(--serif); font-style:italic; font-size:12px; color:rgba(255,255,255,.6);
+    background:none; border:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  .site-footer button:hover{color:#fff;}
 
   /* 구·군 비전 — 엑셀형 표(녹색) */
   .vision-intro{font-family:var(--serif); font-style:italic; color:var(--sub); font-size:13px; margin-bottom:12px;}
@@ -343,7 +349,6 @@
   <nav class="tabs">
     <button id="tab-game" class="active" onclick="showTab('game')">토너먼트</button>
     <button id="tab-rank" onclick="showTab('rank')">랭킹</button>
-    <button id="tab-manage" onclick="showTab('manage')">🔒 편집·관리</button>
   </nav>
 
   <main class="sheet">
@@ -425,6 +430,11 @@
       </div>
     </div><!-- /tabRank -->
   </main>
+
+  <footer class="site-footer">
+    <span>부산 동구 · 민선 9기 슬로건 토너먼트</span>
+    <button onclick="showTab('manage')">🔒 편집·관리 (관리자)</button>
+  </footer>
 
   <!-- 제안·댓글 -->
   <button id="suggestBtn" class="suggest-tab" style="display:none" onclick="openComments()">💬 제안·댓글</button>
@@ -801,7 +811,7 @@ function showTab(name){
   }
   ['game','rank','manage'].forEach(n=>{
     document.getElementById('tab'+n[0].toUpperCase()+n.slice(1)).hidden = (n!==name);
-    document.getElementById('tab-'+n).classList.toggle('active', n===name);
+    const btn=document.getElementById('tab-'+n); if(btn) btn.classList.toggle('active', n===name);
   });
   if(name==='rank') renderRank();
   if(name==='manage') renderManage();
